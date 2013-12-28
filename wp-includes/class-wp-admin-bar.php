@@ -46,7 +46,11 @@ class WP_Admin_Bar {
 		add_action( 'admin_head', 'wp_admin_bar_header' );
 
 		if ( current_theme_supports( 'admin-bar' ) ) {
-			$admin_bar_args = get_theme_support( 'admin-bar' ); // add_theme_support( 'admin-bar', array( 'callback' => '__return_false') );
+			/**
+			 * To remove the default padding styles from WordPress for the Toolbar, use the following code:
+			 * add_theme_support( 'admin-bar', array( 'callback' => '__return_false' ) );
+			 */
+			$admin_bar_args = get_theme_support( 'admin-bar' );
 			$header_callback = $admin_bar_args[0]['callback'];
 		}
 
@@ -58,6 +62,11 @@ class WP_Admin_Bar {
 		wp_enqueue_script( 'admin-bar' );
 		wp_enqueue_style( 'admin-bar' );
 
+		/**
+		 * Fires after WP_Admin_Bar is initialized.
+		 *
+		 * @since 3.1.0
+		 */
 		do_action( 'admin_bar_init' );
 	}
 
@@ -192,7 +201,7 @@ class WP_Admin_Bar {
 	/**
 	 * Remove a node.
 	 *
-	 * @return object The removed node.
+	 * @param string The ID of the item.
 	 */
 	public function remove_node( $id ) {
 		$this->_unset_node( $id );
@@ -348,13 +357,15 @@ class WP_Admin_Bar {
 
 		?>
 		<div id="wpadminbar" class="<?php echo $class; ?>" role="navigation">
-			<a class="screen-reader-text screen-reader-shortcut" href="#wp-toolbar" tabindex="1"><?php _e('Skip to toolbar'); ?></a>
-			<div class="quicklinks" id="wp-toolbar" role="navigation" aria-label="<?php esc_attr_e('Top navigation toolbar.'); ?>">
+			<a class="screen-reader-shortcut" href="#wp-toolbar" tabindex="1"><?php _e('Skip to toolbar'); ?></a>
+			<div class="quicklinks" id="wp-toolbar" role="navigation" aria-label="<?php esc_attr_e('Top navigation toolbar.'); ?>" tabindex="0">
 				<?php foreach ( $root->children as $group ) {
 					$this->_render_group( $group );
 				} ?>
 			</div>
-			<a class="screen-reader-text screen-reader-shortcut" href="<?php echo esc_url( wp_logout_url() ); ?>"><?php _e('Log Out'); ?></a>
+			<?php if ( is_user_logged_in() ) : ?>
+			<a class="screen-reader-shortcut" href="<?php echo esc_url( wp_logout_url() ); ?>"><?php _e('Log Out'); ?></a>
+			<?php endif; ?>
 		</div>
 
 		<?php
@@ -471,6 +482,7 @@ class WP_Admin_Bar {
 		add_action( 'admin_bar_menu', 'wp_admin_bar_my_account_item', 7 );
 
 		// Site related.
+		add_action( 'admin_bar_menu', 'wp_admin_bar_sidebar_toggle', 0 );
 		add_action( 'admin_bar_menu', 'wp_admin_bar_wp_menu', 10 );
 		add_action( 'admin_bar_menu', 'wp_admin_bar_my_sites_menu', 20 );
 		add_action( 'admin_bar_menu', 'wp_admin_bar_site_menu', 30 );
@@ -485,6 +497,11 @@ class WP_Admin_Bar {
 
 		add_action( 'admin_bar_menu', 'wp_admin_bar_add_secondary_groups', 200 );
 
+		/**
+		 * Fires after menus are added to the menu bar.
+		 *
+		 * @since 3.1.0
+		 */
 		do_action( 'add_admin_bar_menus' );
 	}
 }

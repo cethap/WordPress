@@ -1,6 +1,6 @@
 <?php
 /**
- * The template for displaying Search Results pages.
+ * The template for displaying Search Results pages
  *
  * @package WordPress
  * @subpackage Twenty_Twelve
@@ -32,7 +32,7 @@ get_header(); ?>
 			<article id="post-0" class="post no-results not-found">
 				<header class="entry-header">
 					<h1 class="entry-title"><?php _e( 'Nothing Found', 'twentytwelve' ); ?></h1>
-				</header><!-- .entry-header -->
+				</header>
 
 				<div class="entry-content">
 					<p><?php _e( 'Sorry, but nothing matched your search criteria. Please try again with some different keywords.', 'twentytwelve' ); ?></p>
@@ -43,7 +43,7 @@ get_header(); ?>
 		<?php endif; ?>
 
 		</div><!-- #content -->
-	</section><!-- #primary .site-content -->
+	</section><!-- #primary -->
 
 <?php get_sidebar(); ?>
 <?php get_footer(); ?>

@@ -1,6 +1,6 @@
 <?php
 /**
- * The template for displaying 404 pages (Not Found).
+ * The template for displaying 404 pages (Not Found)
  *
  * @package WordPress
  * @subpackage Twenty_Twelve
@@ -24,6 +24,6 @@ get_header(); ?>
 			</article><!-- #post-0 -->
 
 		</div><!-- #content -->
-	</div><!-- #primary .site-content -->
+	</div><!-- #primary -->
 
 <?php get_footer(); ?>

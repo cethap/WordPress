@@ -14,6 +14,23 @@
  */
 
 /**
+ * Get the "dashboard blog", the blog where users without a blog edit their profile data.
+ * Dashboard blog functionality was removed in WordPress 3.1, replaced by the user admin.
+ *
+ * @since MU
+ * @deprecated 3.1.0
+ * @see get_blog_details()
+ * @return int
+ */
+function get_dashboard_blog() {
+    _deprecated_function( __FUNCTION__, '3.1' );
+    if ( $blog = get_site_option( 'dashboard_blog' ) )
+        return get_blog_details( $blog );
+
+    return get_blog_details( $GLOBALS['current_site']->blog_id );
+}
+
+/**
  * @since MU
  * @deprecated 3.0.0
  * @deprecated Use wp_generate_password()
@@ -144,7 +161,7 @@ function validate_email( $email, $check_domain = true) {
  * @deprecated No alternative available. For performance reasons this function is not recommended.
  */
 function get_blog_list( $start = 0, $num = 10, $deprecated = '' ) {
-	_deprecated_function( __FUNCTION__, '3.0' );
+	_deprecated_function( __FUNCTION__, '3.0', 'wp_get_sites()' );
 
 	global $wpdb;
 	$blogs = $wpdb->get_results( $wpdb->prepare("SELECT blog_id, domain, path FROM $wpdb->blogs WHERE site_id = %d AND public = '1' AND archived = '0' AND mature = '0' AND spam = '0' AND deleted = '0' ORDER BY registered DESC", $wpdb->siteid), ARRAY_A );
@@ -272,134 +289,59 @@ function wpmu_admin_redirect_add_updated_param( $url = '' ) {
 }
 
 /**
- * Retrieve option value for a given blog id based on name of option.
+ * Get a numeric user ID from either an email address or a login.
  *
- * If the option does not exist or does not have a value, then the return value
- * will be false. This is useful to check whether you need to install an option
- * and is commonly used during installation of plugin options and to test
- * whether upgrading is required.
- *
- * If the option was serialized then it will be unserialized when it is returned.
+ * A numeric string is considered to be an existing user ID
+ * and is simply returned as such.
  *
  * @since MU
- * @deprecated 3.5.0
+ * @deprecated 3.6.0
+ * @deprecated Use get_user_by()
+ * @uses get_user_by()
  *
- * @param int $id A blog ID. Can be null to refer to the current blog.
- * @param string $option Name of option to retrieve. Expected to not be SQL-escaped.
- * @param mixed $default Optional. Default value to return if the option does not exist.
- * @return mixed Value set for the option.
+ * @param string $string Either an email address or a login.
+ * @return int
  */
-function get_blog_option( $id, $option, $default = false ) {
-	_deprecated_function( __FUNCTION__, '3.5' );
+function get_user_id_from_string( $string ) {
+	_deprecated_function( __FUNCTION__, '3.6', 'get_user_by()' );
 
-	$id = (int) $id;
+	if ( is_email( $string ) )
+		$user = get_user_by( 'email', $string );
+	elseif ( is_numeric( $string ) )
+		return $string;
+	else
+		$user = get_user_by( 'login', $string );
 
-	if ( empty( $id ) )
-		$id = get_current_blog_id();
-
-	if ( get_current_blog_id() == $id )
-		return get_option( $option, $default );
-
-	switch_to_blog( $id );
-	$option = get_option( $option, $default );
-	restore_current_blog();
-
-	return $option;
+	if ( $user )
+		return $user->ID;
+	return 0;
 }
 
 /**
- * Add a new option for a given blog id.
- *
- * You do not need to serialize values. If the value needs to be serialized, then
- * it will be serialized before it is inserted into the database. Remember,
- * resources can not be serialized or added as an option.
- *
- * You can create options without values and then update the values later.
- * Existing options will not be updated and checks are performed to ensure that you
- * aren't adding a protected WordPress option. Care should be taken to not name
- * options the same as the ones which are protected.
+ * Get a full blog URL, given a domain and a path.
  *
  * @since MU
- * @deprecated 3.5.0
+ * @deprecated 3.7.0
  *
- * @param int $id A blog ID. Can be null to refer to the current blog.
- * @param string $option Name of option to add. Expected to not be SQL-escaped.
- * @param mixed $value Optional. Option value, can be anything. Expected to not be SQL-escaped.
- * @return bool False if option was not added and true if option was added.
+ * @param string $domain
+ * @param string $path
+ * @return string
  */
-function add_blog_option( $id, $option, $value ) {
-	_deprecated_function( __FUNCTION__, '3.5' );
+function get_blogaddress_by_domain( $domain, $path ) {
+	_deprecated_function( __FUNCTION__, '3.7' );
 
-	$id = (int) $id;
-
-	if ( empty( $id ) )
-		$id = get_current_blog_id();
-
-	if ( get_current_blog_id() == $id )
-		return add_option( $option, $value );
-
-	switch_to_blog( $id );
-	$return = add_option( $option, $value );
-	restore_current_blog();
-
-	return $return;
-}
-
-/**
- * Removes option by name for a given blog id. Prevents removal of protected WordPress options.
- *
- * @since MU
- * @deprecated 3.5.0
- *
- * @param int $id A blog ID. Can be null to refer to the current blog.
- * @param string $option Name of option to remove. Expected to not be SQL-escaped.
- * @return bool True, if option is successfully deleted. False on failure.
- */
-function delete_blog_option( $id, $option ) {
-	_deprecated_function( __FUNCTION__, '3.5' );
-
-	$id = (int) $id;
-
-	if ( empty( $id ) )
-		$id = get_current_blog_id();
-
-	if ( get_current_blog_id() == $id )
-		return delete_option( $option );
-
-	switch_to_blog( $id );
-	$return = delete_option( $option );
-	restore_current_blog();
-
-	return $return;
-}
-
-/**
- * Update an option for a particular blog.
- *
- * @since MU
- * @deprecated 3.5.0
- *
- * @param int $id The blog id
- * @param string $option The option key
- * @param mixed $value The option value
- * @return bool True on success, false on failrue.
- */
-function update_blog_option( $id, $option, $value, $deprecated = null ) {
-	_deprecated_function( __FUNCTION__, '3.5' );
-
-	$id = (int) $id;
-
-	if ( null !== $deprecated  )
-		_deprecated_argument( __FUNCTION__, '3.1' );
-
-	if ( get_current_blog_id() == $id )
-		return update_option( $option, $value );
-
-	switch_to_blog( $id );
-	$return = update_option( $option, $value );
-	restore_current_blog();
-
-	refresh_blog_details( $id );
-
-	return $return;
+	if ( is_subdomain_install() ) {
+		$url = "http://" . $domain.$path;
+	} else {
+		if ( $domain != $_SERVER['HTTP_HOST'] ) {
+			$blogname = substr( $domain, 0, strpos( $domain, '.' ) );
+			$url = 'http://' . substr( $domain, strpos( $domain, '.' ) + 1 ) . $path;
+			// we're not installing the main blog
+			if ( $blogname != 'www.' )
+				$url .= $blogname . '/';
+		} else { // main blog
+			$url = 'http://' . $domain . $path;
+		}
+	}
+	return esc_url_raw( $url );
 }

@@ -58,27 +58,40 @@ function _sort_name_callback( $a, $b ) {
 
 /**
  * Show the widgets and their settings for a sidebar.
- * Used in the the admin widget config screen.
+ * Used in the admin widget config screen.
  *
  * @since 2.5.0
  *
  * @param string $sidebar id slug of the sidebar
+ * @param string optional $sidebar_name Include the HTML for the sidebar name
  */
-function wp_list_widget_controls( $sidebar ) {
+function wp_list_widget_controls( $sidebar, $sidebar_name = '' ) {
 	add_filter( 'dynamic_sidebar_params', 'wp_list_widget_controls_dynamic_sidebar' );
-
-	echo "<div id='$sidebar' class='widgets-sortables'>\n";
 
 	$description = wp_sidebar_description( $sidebar );
 
-	if ( !empty( $description ) ) {
-		echo "<div class='sidebar-description'>\n";
-		echo "\t<p class='description'>$description</p>";
-		echo "</div>\n";
+	echo '<div id="' . esc_attr( $sidebar ) . '" class="widgets-sortables">';
+
+	if ( $sidebar_name ) {
+		?>
+		<div class="sidebar-name">
+			<div class="sidebar-name-arrow"><br /></div>
+			<h3><?php echo esc_html( $sidebar_name ); ?> <span class="spinner"></span></h3>
+		</div>
+		<?php
 	}
 
+	echo '<div class="sidebar-description">';
+
+	if ( ! empty( $description ) ) {
+		echo '<p class="description">' . $description . '</p>';
+	}
+
+	echo '</div>';
+
 	dynamic_sidebar( $sidebar );
-	echo "</div>\n";
+
+	echo '</div>';
 }
 
 /**
@@ -175,6 +188,9 @@ function wp_widget_control( $sidebar_args ) {
 	$widget_title = esc_html( strip_tags( $sidebar_args['widget_name'] ) );
 	$has_form = 'noform';
 
+	//temporary_hook #26661
+	do_action( 'temp_wp_widget_control_before', $sidebar_args );
+
 	echo $sidebar_args['before_widget']; ?>
 	<div class="widget-top">
 	<div class="widget-title-action">
@@ -211,8 +227,8 @@ function wp_widget_control( $sidebar_args ) {
 		<a class="widget-control-close" href="#close"><?php _e('Close'); ?></a>
 		</div>
 		<div class="alignright<?php if ( 'noform' === $has_form ) echo ' widget-control-noform'; ?>">
-		<img src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" class="ajax-feedback" title="" alt="" />
-		<?php submit_button( __( 'Save' ), 'button-primary widget-control-save', 'savewidget', false, array( 'id' => 'widget-' . esc_attr( $id_format ) . '-savewidget' ) ); ?>
+			<?php submit_button( __( 'Save' ), 'button-primary widget-control-save right', 'savewidget', false, array( 'id' => 'widget-' . esc_attr( $id_format ) . '-savewidget' ) ); ?>
+			<span class="spinner"></span>
 		</div>
 		<br class="clear" />
 	</div>
@@ -224,5 +240,9 @@ function wp_widget_control( $sidebar_args ) {
 	</div>
 <?php
 	echo $sidebar_args['after_widget'];
+
+	//temporary_hook #26661
+	do_action( 'temp_wp_widget_control_after', $sidebar_args, 'noform' !== $has_form );
+
 	return $sidebar_args;
 }

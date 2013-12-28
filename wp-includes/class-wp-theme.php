@@ -37,10 +37,21 @@ final class WP_Theme implements ArrayAccess {
 	 * @var array
 	 */
 	private static $default_themes = array(
-		'classic'      => 'WordPress Classic',
-		'default'      => 'WordPress Default',
-		'twentyten'    => 'Twenty Ten',
-		'twentyeleven' => 'Twenty Eleven',
+		'classic'        => 'WordPress Classic',
+		'default'        => 'WordPress Default',
+		'twentyten'      => 'Twenty Ten',
+		'twentyeleven'   => 'Twenty Eleven',
+		'twentytwelve'   => 'Twenty Twelve',
+		'twentythirteen' => 'Twenty Thirteen',
+		'twentyfourteen' => 'Twenty Fourteen',
+	);
+
+	/**
+	 * Renamed theme tags.
+	 */
+	private static $tag_map = array(
+		'fixed-width'    => 'fixed-layout',
+		'flexible-width' => 'fluid-layout',
 	);
 
 	/**
@@ -85,7 +96,7 @@ final class WP_Theme implements ArrayAccess {
 	/**
 	 * The directory name of the theme's files, inside the theme root.
 	 *
-	 * In the case of a child theme, this is directory name of the the child theme.
+	 * In the case of a child theme, this is directory name of the child theme.
 	 * Otherwise, 'stylesheet' is the same as 'template'.
 	 *
 	 * @access private
@@ -204,7 +215,7 @@ final class WP_Theme implements ArrayAccess {
 		} elseif ( ! file_exists( $this->theme_root . '/' . $theme_file ) ) {
 			$this->headers['Name'] = $this->stylesheet;
 			if ( ! file_exists( $this->theme_root . '/' . $this->stylesheet ) )
-				$this->errors = new WP_Error( 'theme_not_found', __( 'The theme directory does not exist.' ) );
+				$this->errors = new WP_Error( 'theme_not_found', sprintf( __( 'The theme directory "%s" does not exist.' ), $this->stylesheet ) );
 			else
 				$this->errors = new WP_Error( 'theme_no_stylesheet', __( 'Stylesheet is missing.' ) );
 			$this->template = $this->stylesheet;
@@ -253,6 +264,7 @@ final class WP_Theme implements ArrayAccess {
 				// Parent theme is missing.
 				$this->errors = new WP_Error( 'theme_no_parent', sprintf( __( 'The parent theme is missing. Please install the "%s" parent theme.' ), $this->template ) );
 				$this->cache_add( 'theme', array( 'headers' => $this->headers, 'errors' => $this->errors, 'stylesheet' => $this->stylesheet, 'template' => $this->template ) );
+				$this->parent = new WP_Theme( $this->template, $this->theme_root, $this );
 				return;
 			}
 		}
@@ -702,8 +714,11 @@ final class WP_Theme implements ArrayAccess {
 				}
 
 				foreach ( $value as &$tag ) {
-					if ( isset( $tags_list[ $tag ] ) )
+					if ( isset( $tags_list[ $tag ] ) ) {
 						$tag = $tags_list[ $tag ];
+					} elseif ( isset( self::$tag_map[ $tag ] ) ) {
+						$tag = $tags_list[ self::$tag_map[ $tag ] ];
+					}
 				}
 
 				return $value;
@@ -717,7 +732,7 @@ final class WP_Theme implements ArrayAccess {
 	/**
 	 * The directory name of the theme's "stylesheet" files, inside the theme root.
 	 *
-	 * In the case of a child theme, this is directory name of the the child theme.
+	 * In the case of a child theme, this is directory name of the child theme.
 	 * Otherwise, get_stylesheet() is the same as get_template().
 	 *
 	 * @since 3.4.0
@@ -794,7 +809,7 @@ final class WP_Theme implements ArrayAccess {
 	 * @return string URL to the stylesheet directory.
 	 */
 	public function get_stylesheet_directory_uri() {
-		return $this->get_theme_root_uri() . '/' . $this->stylesheet;
+		return $this->get_theme_root_uri() . '/' . str_replace( '%2F', '/', rawurlencode( $this->stylesheet ) );
 	}
 
 	/**
@@ -814,7 +829,7 @@ final class WP_Theme implements ArrayAccess {
 		else
 			$theme_root_uri = $this->get_theme_root_uri();
 
-		return $theme_root . '/' . $this->template;
+		return $theme_root_uri . '/' . str_replace( '%2F', '/', rawurlencode( $this->template ) );
 	}
 
 	/**
@@ -1071,7 +1086,8 @@ final class WP_Theme implements ArrayAccess {
 	 * @return array Array of stylesheet names.
 	 */
 	public static function get_allowed( $blog_id = null ) {
-		return self::get_allowed_on_network() + self::get_allowed_on_site( $blog_id );
+		$network = (array) apply_filters( 'allowed_themes', self::get_allowed_on_network() );
+		return $network + self::get_allowed_on_site( $blog_id );
 	}
 
 	/**
@@ -1101,7 +1117,7 @@ final class WP_Theme implements ArrayAccess {
 	public static function get_allowed_on_site( $blog_id = null ) {
 		static $allowed_themes = array();
 
-		if ( ! $blog_id )
+		if ( ! $blog_id || ! is_multisite() )
 			$blog_id = get_current_blog_id();
 
 		if ( isset( $allowed_themes[ $blog_id ] ) )
